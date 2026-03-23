@@ -2,15 +2,20 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './modules/prisma/prisma.module';
+import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { envValidationSchema } from './env.validation';
+import { RedisModule } from './infrastructure/redis/redis.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      validationSchema: envValidationSchema,
     }),
     PrismaModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],
