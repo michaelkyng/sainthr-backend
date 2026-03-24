@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Inject,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   InternalServerErrorException,
 } from '@nestjs/common';
 import Redis from 'ioredis';
@@ -23,24 +24,37 @@ export class AppController {
 
   @Get('/health')
   async health() {
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      const redis = await this.redis.ping();
+    const db = await this.prisma.$queryRaw`SELECT 1`;
+    const redis = await this.redis.ping();
 
-      return {
-        ok: true,
-        db: 'up',
-        redis: redis === 'PONG' ? 'up' : 'down',
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw new InternalServerErrorException({
-        ok: false,
-        db: 'down',
-        redis: 'down',
-        message: error instanceof Error ? error.message : 'Health check failed',
-        timestamp: new Date().toISOString(),
-      });
-    }
+    return {
+      ok: true,
+      db,
+      redis,
+      timestamp: new Date().toISOString(),
+    };
   }
+
+  // @Get('/health')
+  // async health() {
+  //   try {
+  //     await this.prisma.$queryRaw`SELECT 1`;
+  //     const redis = await this.redis.ping();
+
+  //     return {
+  //       ok: true,
+  //       db: 'up',
+  //       redis: redis === 'PONG' ? 'up' : 'down',
+  //       timestamp: new Date().toISOString(),
+  //     };
+  //   } catch (error) {
+  //     throw new InternalServerErrorException({
+  //       ok: false,
+  //       db: 'down',
+  //       redis: 'down',
+  //       message: error instanceof Error ? error.message : 'Health check failed',
+  //       timestamp: new Date().toISOString(),
+  //     });
+  //   }
+  // }
 }

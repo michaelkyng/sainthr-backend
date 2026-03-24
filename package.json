@@ -4,6 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "clean:workspace": "rm -rf node_modules apps/api/node_modules apps/worker/node_modules apps/api/dist apps/worker/dist apps/api/coverage apps/worker/coverage",
+    "api:start": "pnpm --dir apps/api start",
+    "api:dev": "pnpm --dir apps/api start:dev",
+    "api:debug": "pnpm --dir apps/api start:debug",
+    "api:prod": "pnpm --dir apps/api start:prod",
+    "worker:start": "pnpm --dir apps/worker start",
+    "worker:dev": "pnpm --dir apps/worker start:dev",
+    "worker:debug": "pnpm --dir apps/worker start:debug",
+    "worker:prod": "pnpm --dir apps/worker start:prod",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
