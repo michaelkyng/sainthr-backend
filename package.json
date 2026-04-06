@@ -9,6 +9,11 @@
     "api:dev": "pnpm --dir apps/api start:dev",
     "api:debug": "pnpm --dir apps/api start:debug",
     "api:prod": "pnpm --dir apps/api start:prod",
+    "db:seed": "pnpm run --dir apps/api prisma:seed",
+    "db:migrate:dev": "pnpm run --dir apps/api prisma:migrate:dev",
+    "db:migrate:deploy": "pnpm run --dir apps/api prisma:migrate:deploy",
+    "db:generate": "pnpm run --dir apps/api prisma:generate",
+    "db:migrate:reset": "pnpm run --dir apps/api prisma:migrate:reset",
     "worker:start": "pnpm --dir apps/worker start",
     "worker:dev": "pnpm --dir apps/worker start:dev",
     "worker:debug": "pnpm --dir apps/worker start:debug",
@@ -16,7 +21,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Michael Akpuofoba",
   "license": "ISC",
   "packageManager": "pnpm@10.11.0"
 }

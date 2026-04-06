@@ -11,7 +11,6 @@ import { RedisModule } from './infrastructure/redis/redis.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       validationSchema: envValidationSchema,
     }),
     PrismaModule,

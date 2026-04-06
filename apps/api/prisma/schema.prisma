@@ -11,3 +11,181 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  ADMIN
+  CANDIDATE
+  EMPLOYER
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum ExperienceLevel {
+  ENTRY
+  MID
+  SENIOR
+  LEAD
+}
+
+enum LocationType {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+enum JobApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  REJECTED
+  HIRED
+}
+
+model TestConnection {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+model User {
+  clerkUserId String   @unique
+  email       String   @unique
+  role        UserRole
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  candidateProfile CandidateProfile?
+  employerProfile  EmployerProfile?
+  statusChanges    ApplicationStatusHistory[] @relation("StatusChangedByUser")
+}
+
+model CandidateProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  firstName         String
+  lastName          String
+  phone             String?
+  bio               String?
+  yearsOfExperience Int?
+  location          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  user         User             @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+  resumes      Resume[]
+  applications JobApplication[]
+}
+
+model EmployerProfile {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+  companies Company[]
+}
+
+model Company {
+  id                String    @id @default(cuid())
+  employerProfileId String
+  name              String
+  slug              String    @unique
+  description       String?
+  website           String?
+  location          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  employerProfile EmployerProfile @relation(fields: [employerProfileId], references: [id], onDelete: Cascade)
+  jobs            Job[]
+}
+
+model Job {
+  id                  String          @id @default(cuid())
+  companyId           String
+  title               String
+  slug                String          @unique
+  description         String
+  requirements        String?
+  employmentType      EmploymentType
+  experienceLevel     ExperienceLevel
+  locationType        LocationType
+  city                String?
+  country             String?
+  salaryMin           Int?
+  salaryMax           Int?
+  currency            String?
+  status              JobStatus       @default(DRAFT)
+  applicationDeadline DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime?
+
+  company      Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications JobApplication[]
+}
+
+model Resume {
+  id                 String    @id @default(cuid())
+  candidateProfileId String
+  fileUrl            String
+  fileName           String
+  mimeType           String?
+  fileSize           Int?
+  isPrimary          Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  applications     JobApplication[]
+}
+
+model JobApplication {
+  id                 String               @id @default(cuid())
+  jobId              String
+  candidateProfileId String
+  resumeId           String?
+  coverLetter        String?
+  status             JobApplicationStatus @default(PENDING)
+  appliedAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  deletedAt          DateTime?
+
+  job              Job                        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateProfile CandidateProfile           @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  resume           Resume?                    @relation(fields: [resumeId], references: [id], onDelete: Restrict)
+  statusHistory    ApplicationStatusHistory[]
+
+  @@unique([jobId, candidateProfileId])
+}
+
+model ApplicationStatusHistory {
+  id               String                @id @default(cuid())
+  jobApplicationId String
+  oldStatus        JobApplicationStatus?
+  newStatus        JobApplicationStatus
+  changedByUserId  String
+  note             String?
+  createdAt        DateTime              @default(now())
+
+  jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+  changedByUser  User           @relation("StatusChangedByUser", fields: [changedByUserId], references: [clerkUserId], onDelete: Restrict)
+}

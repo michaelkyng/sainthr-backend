@@ -2,8 +2,7 @@ import {
   Controller,
   Get,
   Inject,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  InternalServerErrorException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from './infrastructure//prisma/prisma.service';
@@ -24,35 +23,61 @@ export class AppController {
 
   @Get('/health')
   async health() {
-    const db = await this.prisma.$queryRaw`SELECT 1`;
-    const redis = await this.redis.ping();
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      const redis = await this.redis.ping();
 
-    return {
-      ok: true,
-      db,
-      redis,
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        ok: true,
+        db: 'up',
+        redis: redis === 'PONG' ? 'up' : 'down',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw new ServiceUnavailableException({
+        ok: false,
+        db: 'down',
+        redis: 'down',
+        message: error instanceof Error ? error.message : 'Health check failed',
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
-  // @Get('/health')
-  // async health() {
+  // @Get('/health/live')
+  // live() {
+  //   return {
+  //     ok: true,
+  //     status: 'up',
+  //     timestamp: new Date().toISOString(),
+  //   };
+  // }
+
+  // @Get('/health/ready')
+  // async ready() {
   //   try {
   //     await this.prisma.$queryRaw`SELECT 1`;
-  //     const redis = await this.redis.ping();
+  //     const redisPing = await this.redis.ping();
+
+  //     const redisStatus = redisPing === 'PONG' ? 'up' : 'down';
+
+  //     if (redisStatus !== 'up') {
+  //       throw new Error('Redis ping failed');
+  //     }
 
   //     return {
   //       ok: true,
   //       db: 'up',
-  //       redis: redis === 'PONG' ? 'up' : 'down',
+  //       redis: redisStatus,
   //       timestamp: new Date().toISOString(),
   //     };
   //   } catch (error) {
-  //     throw new InternalServerErrorException({
+  //     throw new ServiceUnavailableException({
   //       ok: false,
   //       db: 'down',
   //       redis: 'down',
-  //       message: error instanceof Error ? error.message : 'Health check failed',
+  //       message:
+  //         error instanceof Error ? error.message : 'Readiness check failed',
   //       timestamp: new Date().toISOString(),
   //     });
   //   }
