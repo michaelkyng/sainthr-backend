@@ -14,6 +14,7 @@
     "db:migrate:deploy": "pnpm run --dir apps/api prisma:migrate:deploy",
     "db:generate": "pnpm run --dir apps/api prisma:generate",
     "db:migrate:reset": "pnpm run --dir apps/api prisma:migrate:reset",
+    "db:format": "pnpm run --dir apps/api prisma:format",
     "worker:start": "pnpm --dir apps/worker start",
     "worker:dev": "pnpm --dir apps/worker start:dev",
     "worker:debug": "pnpm --dir apps/worker start:debug",

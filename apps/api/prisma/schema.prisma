@@ -164,6 +164,8 @@ model JobApplication {
   jobId              String
   candidateProfileId String
   resumeId           String?
+  resumeSnapshotUrl  String
+  resumeSnapshotData Json?
   coverLetter        String?
   status             JobApplicationStatus @default(PENDING)
   appliedAt          DateTime             @default(now())
@@ -189,4 +191,14 @@ model ApplicationStatusHistory {
 
   jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
   changedByUser  User           @relation("StatusChangedByUser", fields: [changedByUserId], references: [clerkUserId], onDelete: Restrict)
+}
+
+model ApplicationResumeHistory {
+  id               String @id @default(cuid())
+  jobApplicationId String
+
+  oldResumeId String?
+  newResumeId String?
+
+  changedAt DateTime @default(now())
 }

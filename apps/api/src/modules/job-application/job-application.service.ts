@@ -5,11 +5,16 @@ import {
   JobApplicationRepository,
   JobApplicationStatusHistoryRepository,
   UserRepository,
+  JobRepository,
+  ResumeRepository,
 } from '@/common/database/repositories';
-import { JobRepository } from '@/common/database/repositories/job.repository';
-import { ResumeRepository } from '@/common/database/repositories/resume.repository';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
-import { JobApplicationStatus, Prisma } from '../../../generated/prisma/client';
+import {
+  Job,
+  JobApplicationStatus,
+  Prisma,
+} from '../../../generated/prisma/client';
+import { isDuplicateEntries, isDeadlock } from '@/helpers/postgres.handlers';
 
 @Injectable()
 export class JobApplicationService {
@@ -25,22 +30,13 @@ export class JobApplicationService {
     private prisma: PrismaService,
     @Inject('JobApplicationStatusHistoryRepository')
     private readonly jobApplicationStatusHistoryRepository: JobApplicationStatusHistoryRepository,
+    private maxRetries = 3,
   ) {}
 
-  async create(createJobApplicationDto: CreateJobApplicationDto) {
-    if (
-      !createJobApplicationDto.clerkUserId ||
-      createJobApplicationDto.clerkUserId.trim() === '' ||
-      !createJobApplicationDto.jobId ||
-      createJobApplicationDto.jobId.trim() === '' ||
-      !createJobApplicationDto.resumeId ||
-      createJobApplicationDto.resumeId.trim() === '' ||
-      !createJobApplicationDto.coverLetter ||
-      createJobApplicationDto.coverLetter.trim() === ''
-    ) {
-      throw new BadRequestException('All fields are required');
-    }
-
+  private async jobCreateTransaction(
+    createJobApplicationDto: CreateJobApplicationDto,
+    retryCount = this.maxRetries,
+  ): Promise<{ message: string; data: any }> {
     const user = await this.userRepository.findOne(
       { clerkUserId: createJobApplicationDto.clerkUserId },
       { candidateProfile: true },
@@ -53,28 +49,36 @@ export class JobApplicationService {
     if (!user.candidateProfile) {
       throw new BadRequestException('Candidate profile not found');
     }
-
-    const job = await this.jobRepository.findOne({
-      id: createJobApplicationDto.jobId,
-    });
-
-    if (!job || job.status !== 'OPEN') {
-      throw new BadRequestException('Job not found');
-    }
-
     const resume = await this.resumeRepository.findOne({
       id: createJobApplicationDto.resumeId,
     });
-
     if (!resume) {
       throw new BadRequestException('Resume not found');
     }
     try {
       const result = await this.prisma.$transaction(async (tx) => {
+        const jobs = await tx.$queryRaw<Job[]>`
+        SELECT * FROM "Job"
+        WHERE id = ${createJobApplicationDto.jobId}
+        FOR UPDATE
+      `;
+
+        const job = jobs[0];
+
+        if (!job || job.status !== 'OPEN') {
+          throw new BadRequestException('Job not found');
+        }
+
         const newJobApplication = await tx.jobApplication.create({
           data: {
             jobId: createJobApplicationDto.jobId,
             resumeId: createJobApplicationDto.resumeId,
+            resumeSnapshotUrl: resume.fileUrl,
+            resumeSnapshotData: {
+              fileName: resume.fileName,
+              mimeType: resume.mimeType,
+              fileSize: resume.fileSize,
+            },
             coverLetter: createJobApplicationDto.coverLetter,
             candidateProfileId: user.candidateProfile!.id,
           },
@@ -99,22 +103,46 @@ export class JobApplicationService {
     } catch (error: unknown) {
       console.error('Error creating job application:', error);
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          const existing = await this.prisma.jobApplication.findUnique({
-            where: {
-              jobId_candidateProfileId: {
-                jobId: createJobApplicationDto.jobId,
-                candidateProfileId: user.candidateProfile.id,
-              },
+        if (isDuplicateEntries(error.code)) {
+          const existing = await this.jobApplicationRepository.findOne({
+            jobId_candidateProfileId: {
+              jobId: createJobApplicationDto.jobId,
+              candidateProfileId: user.candidateProfile.id,
             },
           });
 
-          return existing;
+          return {
+            message: 'Job application already exists',
+            data: existing,
+          };
+        }
+        if (isDeadlock(error.code)) {
+          await this.jobCreateTransaction(
+            createJobApplicationDto,
+            retryCount - 1,
+          );
         }
       }
 
       throw new BadRequestException('Something went wrong while applying');
     }
+  }
+
+  async create(createJobApplicationDto: CreateJobApplicationDto) {
+    if (
+      !createJobApplicationDto.clerkUserId ||
+      createJobApplicationDto.clerkUserId.trim() === '' ||
+      !createJobApplicationDto.jobId ||
+      createJobApplicationDto.jobId.trim() === '' ||
+      !createJobApplicationDto.resumeId ||
+      createJobApplicationDto.resumeId.trim() === '' ||
+      !createJobApplicationDto.coverLetter ||
+      createJobApplicationDto.coverLetter.trim() === ''
+    ) {
+      throw new BadRequestException('All fields are required');
+    }
+    const result = await this.jobCreateTransaction(createJobApplicationDto);
+    return result;
   }
 
   findAll() {
