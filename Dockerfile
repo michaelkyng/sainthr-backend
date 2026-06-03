@@ -23,8 +23,8 @@ COPY --from=deps /app/apps/worker/node_modules ./apps/worker/node_modules
 
 COPY . .
 
-# Generate Prisma client
-RUN pnpm --dir apps/api exec prisma generate
+# Generate Prisma client — dummy DATABASE_URL satisfies prisma.config.ts at build time
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm --dir apps/api exec prisma generate
 
 # Build the API
 RUN pnpm --dir apps/api build
