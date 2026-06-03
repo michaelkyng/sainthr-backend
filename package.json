@@ -1,4 +1,7 @@
 {
+  "dependencies": {
+    "@nestjs/mapped-types": "*"
+  },
   "name": "sainthr-backend",
   "version": "1.0.0",
   "description": "",
@@ -9,6 +12,7 @@
     "api:dev": "pnpm --dir apps/api start:dev",
     "api:debug": "pnpm --dir apps/api start:debug",
     "api:prod": "pnpm --dir apps/api start:prod",
+    "api:nest": "pnpm --dir apps/api exec nest",
     "db:seed": "pnpm run --dir apps/api prisma:seed",
     "db:migrate:dev": "pnpm run --dir apps/api prisma:migrate:dev",
     "db:migrate:deploy": "pnpm run --dir apps/api prisma:migrate:deploy",

@@ -60,12 +60,12 @@ model TestConnection {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  clerkUserId String   @unique
-  email       String   @unique
-  role        UserRole
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String     @id @default(cuid())
+  clerkUserId String     @unique
+  email       String     @unique
+  roles       UserRole[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   candidateProfile CandidateProfile?
   employerProfile  EmployerProfile?
@@ -81,6 +81,7 @@ model CandidateProfile {
   bio               String?
   yearsOfExperience Int?
   location          String?
+  isOnboarded       Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -91,12 +92,13 @@ model CandidateProfile {
 }
 
 model EmployerProfile {
-  id        String    @id @default(cuid())
-  userId    String    @unique
-  phone     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  phone       String?
+  isOnboarded Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   user      User      @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
   companies Company[]

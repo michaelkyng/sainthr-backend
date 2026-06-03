@@ -1,25 +1,25 @@
 services:
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: sainthr_app
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   env_file:
-  #     - .env.development
-  #   environment:
-  #     NODE_ENV: development
-  #     PORT: ${PORT}
-  #     DATABASE_URL: ${DATABASE_URL}
-  #     REDIS_HOST: ${REDIS_HOST}
-  #     REDIS_PORT: ${REDIS_PORT}
-  #     JWT_SECRET: ${JWT_SECRET}
-  #   ports:
-  #     - "${PORT}:${PORT}"
-  #   command: sh -c "npx prisma migrate deploy && node dist/main"
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sainthr_app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env.development
+    environment:
+      NODE_ENV: development
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${PORT}:${PORT}"
+    command: sh -c "npx prisma migrate deploy && node dist/main"
 
   postgres:
     image: postgres:17
@@ -35,7 +35,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: sainthr_redis
     restart: unless-stopped
     ports:
