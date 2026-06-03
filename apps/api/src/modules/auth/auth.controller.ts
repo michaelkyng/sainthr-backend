@@ -12,8 +12,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  signup(@Body() createAuthDto: CreateAuthDto) {
+    return this.authService.signup(createAuthDto);
   }
 
   @ApiOperation({ summary: 'Retrieve current user information' })
