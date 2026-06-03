@@ -1,5 +1,6 @@
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import type { Prisma } from '../../../../generated/prisma/client';
+import { NotFoundException } from '@nestjs/common';
 
 type CreateArg<TModel> = Prisma.Args<TModel, 'create'>;
 type FindUniqueArg<TModel> = Prisma.Args<TModel, 'findUnique'>;
@@ -81,6 +82,46 @@ export class BaseRepository<TModel extends PrismaDelegate> {
     return this.findOne({ id } as UniqueWhere<TModel>, include);
   }
 
+  async findByIdOrThrow<
+    TInclude extends FindUniqueInclude<TModel> | undefined = undefined,
+  >(
+    id: string,
+    include?: TInclude,
+  ): Promise<FindUniqueResult<TModel, TInclude>> {
+    const user = await this.findOne({ id } as UniqueWhere<TModel>, include);
+    if (!user) {
+      throw new NotFoundException(`User not found with ID: ${id}`);
+    }
+    return user;
+  }
+
+  findByClerkUserId<
+    TInclude extends FindUniqueInclude<TModel> | undefined = undefined,
+  >(
+    clerkUserId: string,
+    include?: TInclude,
+  ): Promise<FindUniqueResult<TModel, TInclude>> {
+    return this.findOne({ clerkUserId } as UniqueWhere<TModel>, include);
+  }
+
+  async findByClerkUserIdOrThrow<
+    TInclude extends FindUniqueInclude<TModel> | undefined = undefined,
+  >(
+    clerkUserId: string,
+    include?: TInclude,
+  ): Promise<FindUniqueResult<TModel, TInclude>> {
+    const record = await this.findOne(
+      { clerkUserId } as UniqueWhere<TModel>,
+      include,
+    );
+    if (!record) {
+      throw new NotFoundException(
+        `Record not found with clerkUserId: ${clerkUserId}`,
+      );
+    }
+    return record;
+  }
+
   findOne<TInclude extends FindUniqueInclude<TModel> | undefined = undefined>(
     where: UniqueWhere<TModel>,
     include?: TInclude,
@@ -89,6 +130,19 @@ export class BaseRepository<TModel extends PrismaDelegate> {
       where,
       include,
     } as FindUniqueArg<TModel>) as Promise<FindUniqueResult<TModel, TInclude>>;
+  }
+
+  async findOneOrThrow<
+    TInclude extends FindUniqueInclude<TModel> | undefined = undefined,
+  >(
+    where: UniqueWhere<TModel>,
+    include?: TInclude,
+  ): Promise<FindUniqueResult<TModel, TInclude>> {
+    const record = await this.findOne(where, include);
+    if (!record) {
+      throw new NotFoundException(`Record not found`);
+    }
+    return record;
   }
 
   findAll<TInclude extends FindManyInclude<TModel> | undefined = undefined>(
@@ -113,6 +167,20 @@ export class BaseRepository<TModel extends PrismaDelegate> {
     } as UpdateArg<TModel>) as Promise<UpdateResult<TModel, TInclude>>;
   }
 
+  updateByClerkUserId<
+    TInclude extends UpdateInclude<TModel> | undefined = undefined,
+  >(
+    clerkUserId: string,
+    data: UpdateData<TModel>,
+    include?: TInclude,
+  ): Promise<UpdateResult<TModel, TInclude>> {
+    return this.model.update({
+      where: { clerkUserId } as UniqueWhere<TModel>,
+      include,
+      data,
+    } as UpdateArg<TModel>) as Promise<UpdateResult<TModel, TInclude>>;
+  }
+
   delete<TInclude extends DeleteInclude<TModel> | undefined = undefined>(
     id: string,
     include?: TInclude,
@@ -123,12 +191,37 @@ export class BaseRepository<TModel extends PrismaDelegate> {
     } as DeleteArg<TModel>) as Promise<DeleteResult<TModel, TInclude>>;
   }
 
+  deleteByClerkUserId<
+    TInclude extends DeleteInclude<TModel> | undefined = undefined,
+  >(
+    clerkUserId: string,
+    include?: TInclude,
+  ): Promise<DeleteResult<TModel, TInclude>> {
+    return this.model.delete({
+      where: { clerkUserId } as UniqueWhere<TModel>,
+      include,
+    } as DeleteArg<TModel>) as Promise<DeleteResult<TModel, TInclude>>;
+  }
+
   softDelete<TInclude extends UpdateInclude<TModel> | undefined = undefined>(
     id: string,
     include?: TInclude,
   ): Promise<UpdateResult<TModel, TInclude>> {
     return this.model.update({
       where: { id } as UniqueWhere<TModel>,
+      data: { deletedAt: new Date() } as UpdateData<TModel>,
+      include,
+    } as UpdateArg<TModel>) as Promise<UpdateResult<TModel, TInclude>>;
+  }
+
+  softDeleteByClerkUserId<
+    TInclude extends UpdateInclude<TModel> | undefined = undefined,
+  >(
+    clerkUserId: string,
+    include?: TInclude,
+  ): Promise<UpdateResult<TModel, TInclude>> {
+    return this.model.update({
+      where: { clerkUserId } as UniqueWhere<TModel>,
       data: { deletedAt: new Date() } as UpdateData<TModel>,
       include,
     } as UpdateArg<TModel>) as Promise<UpdateResult<TModel, TInclude>>;

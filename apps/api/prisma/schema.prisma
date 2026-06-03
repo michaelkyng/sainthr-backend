@@ -60,12 +60,12 @@ model TestConnection {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  clerkUserId String   @unique
-  email       String   @unique
-  roles        UserRole[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String     @id @default(cuid())
+  clerkUserId String     @unique
+  email       String     @unique
+  roles       UserRole[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   candidateProfile CandidateProfile?
   employerProfile  EmployerProfile?
