@@ -1,6 +1,6 @@
 # ---- deps stage ----
-FROM node:22-alpine AS deps
-RUN npm install -g pnpm@10.11.0
+FROM node:22.15-alpine AS deps
+RUN apk upgrade --no-cache && npm install -g pnpm@10.11.0
 
 WORKDIR /app
 
@@ -12,8 +12,8 @@ COPY apps/worker/package.json ./apps/worker/
 RUN pnpm install --frozen-lockfile
 
 # ---- builder stage ----
-FROM node:22-alpine AS builder
-RUN npm install -g pnpm@10.11.0
+FROM node:22.15-alpine AS builder
+RUN apk upgrade --no-cache && npm install -g pnpm@10.11.0
 
 WORKDIR /app
 
@@ -30,7 +30,8 @@ RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm --dir apps
 RUN pnpm --dir apps/api build
 
 # ---- runner stage ----
-FROM node:22-alpine AS runner
+FROM node:22.15-alpine AS runner
+RUN apk upgrade --no-cache
 
 WORKDIR /app
 
@@ -43,8 +44,9 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/generated ./apps/api/generated
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 
 EXPOSE ${PORT:-3000}
 
 # Run migrations then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/main"]
+CMD ["sh", "-c", "(cd apps/api && node_modules/.bin/prisma migrate deploy) && node apps/api/dist/main"]
