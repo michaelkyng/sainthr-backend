@@ -49,4 +49,4 @@ COPY --from=builder /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 EXPOSE ${PORT:-3000}
 
 # Run migrations then start the server
-CMD ["sh", "-c", "(cd apps/api && node_modules/.bin/prisma migrate deploy) && node apps/api/dist/main"]
+CMD ["sh", "-c", "(cd apps/api && node_modules/.bin/prisma migrate deploy) && node apps/api/dist/src/main"]
