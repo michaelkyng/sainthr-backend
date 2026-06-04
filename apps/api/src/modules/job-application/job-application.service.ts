@@ -10,7 +10,7 @@ import {
 } from '@/common/database/repositories';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import {
-  Job,
+  type Job,
   JobApplicationStatus,
   Prisma,
 } from '../../../generated/prisma/client';
@@ -18,6 +18,8 @@ import { isDuplicateEntries, isDeadlock } from '@/helpers/postgres.handlers';
 
 @Injectable()
 export class JobApplicationService {
+  private maxRetries = 3;
+
   constructor(
     @Inject('JobApplicationRepository')
     private readonly jobApplicationRepository: JobApplicationRepository,
@@ -30,7 +32,6 @@ export class JobApplicationService {
     private prisma: PrismaService,
     @Inject('JobApplicationStatusHistoryRepository')
     private readonly jobApplicationStatusHistoryRepository: JobApplicationStatusHistoryRepository,
-    private maxRetries = 3,
   ) {}
 
   private async jobCreateTransaction(

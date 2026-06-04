@@ -10,7 +10,7 @@ export class UserService {
   constructor(
     private prisma: PrismaService,
     @Inject('UserRepository')
-    private userRepository: UserRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
   create(createUserDto: CreateUserDto) {
